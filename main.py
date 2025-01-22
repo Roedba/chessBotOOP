@@ -12,8 +12,8 @@ font = pygame.font.Font(None, 36)  # None uses default font, size 36
 
 # Create class instances
 piece = Piece()
-"""rook = Rook()
 bishop = Bishop()
+"""rook = Rook()
 knight = Knight()
 queen = Queen()
 king = King()"""

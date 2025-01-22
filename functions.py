@@ -108,8 +108,25 @@ class Knight(Piece):
         super().__init__()
 
     def getLegalMoves(self,moveRight,piecePos,legalMoves):
-        pass
+        column = "12345678"
+        row = "abcdefgh"
+        directions = [
+                            ((1,1),(0,0)),   # Top right
+                            ((1,-1),(0,0)),   # Top left
+                            ((-1, 1),(0,-0)),      # Bottom right
+                            ((-1, -1),(0,0)),      # Bottom left
+                            ((0, 0),(1,-1)),       # Right up
+                            ((0, 0),(1,1)),       # Right down
+                            ((0, 0),(-1,-1))        # Left down
+                            ((0, 0),(-1,1))        # Left up
+                    ]
+        for piece,position in piecePos.items():
+            if piece[0:2] == f"{moveRight}N":
+                currentCol = row.index(position[0])
+                currentRow = column.index(position[1])
 
+            for direction in directions:
+                    (columnOffSet, rowOffSet ),(sideRowOffSet,sideColumnOffSet)= direction
 class Bishop(Piece):
     def __init__(self):
         super().__init__()
@@ -119,10 +136,10 @@ class Bishop(Piece):
         column = "12345678"
         row = "abcdefgh"
         directions = [
-                    (1, 1),   # Top-right
-                    (1, -1),  # Bottom-right
-                    (-1, 1),  # Top-left
-                    (-1, -1)  # Bottom-left
+                    (1, 1),   # Topright
+                    (1, -1),  # Bottomright
+                    (-1, 1),  # Topleft
+                    (-1, -1)  # Bottomleft
                 ]
         for piece,position in piecePos.items():
             if piece[0:2] == f"{moveRight}B":
@@ -186,15 +203,17 @@ def getAllLegalMoves(piecePos, moveRight, legalMoves):
             
             if pieceType == "P":
                 Pawn().getLegalMoves(moveRight, piecePos, legalMoves)
+            elif pieceType == "B":
+                Bishop().getLegalMoves(moveRight, piecePos, legalMoves)
             """
             elif pieceType == "R":
-                Rook().getLegalMoves(moveRight, piecePos, board, legalMoves)
+                Rook().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "N":
-                Knight().getLegalMoves(moveRight, piecePos, board, legalMoves)
+                Knight().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "B":
-                Bishop().getLegalMoves(moveRight, piecePos, board, legalMoves)
+                Bishop().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "Q":
-                Queen().getLegalMoves(moveRight, piecePos, board, legalMoves)
+                Queen().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "K":
-                King().getLegalMoves(moveRight, piecePos, board, legalMoves)"""
+                King().getLegalMoves(moveRight, piecePos, legalMoves)"""
     return legalMoves

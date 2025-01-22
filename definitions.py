@@ -9,14 +9,18 @@ rowW = "abcdefgh"
 rowB = "hgfedcba"
 columnW = "12345678"
 columnB = "87654321"
+move = None
+enpassantPossibility = ["notPossible",None]
 
+pieceCount = {
+    "wQ":1,"wK":1,"wB":2,"wN":2,"wP":8,"wR":2,"bQ":1,"bK":1,"bB":2,"bN":2,"bP":8,"bR":2
+}
 piece_pos = {
     "wR1": "a1", "wN1": "b1", "wB1": "c1", "wQ1": "d1", "wK1": "e1", "wB2": "f1", "wN2": "g1", "wR2": "h1",
     "bR1": "a8", "bN1": "b8", "bB1": "c8", "bQ1": "d8", "bK1": "e8", "bB2": "f8", "bN2": "g8", "bR2": "h8",
-    "wP1": "a2", "wP2": "b2", "wP3": "c2", "wP4": "d2", "wP5": "e2", "wP6": "f2", "wP7": "g2", "wP8": "h2",
+    "wP1": "a4", "wP2": "b2", "wP3": "c2", "wP4": "d2", "wP5": "e2", "wP6": "f2", "wP7": "g2", "wP8": "h2",
     "bP1": "a7", "bP2": "b7", "bP3": "c7", "bP4": "d7", "bP5": "e7", "bP6": "f7", "bP7": "g7", "bP8": "h7"
 }
-
 sq = {'a8': '42|25', 'b8': '101|25', 'c8': '160|25', 'd8': '219|25', 'e8': '278|25', 'f8': '337|25', 'g8': '396|25', 'h8': '455|25',
        'a7': '42|84', 'b7': '101|84', 'c7': '160|84', 'd7': '219|84', 'e7': '278|84', 'f7': '337|84', 'g7': '396|84', 'h7': '455|84',
          'a6': '42|143', 'b6': '101|143', 'c6': '160|143', 'd6': '219|143', 'e6': '278|143', 'f6': '337|143', 'g6': '396|143',
@@ -27,16 +31,23 @@ sq = {'a8': '42|25', 'b8': '101|25', 'c8': '160|25', 'd8': '219|25', 'e8': '278|
                    'd2': '219|379', 'e2': '278|379', 'f2': '337|379', 'g2': '396|379', 'h2': '455|379', 'a1': '42|438', 'b1': '101|438',
                      'c1': '160|438', 'd1': '219|438', 'e1': '278|438', 'f1': '337|438', 'g1': '396|438', 'h1': '455|438'}
 
+pieceMoveCount = {
+    "wR1": 0, "wN1": 0, "wB1": 0, "wQ1": 0, "wK1": 0, "wB2": 0, "wN2": 0, "wR2": 0,
+    "bR1": 0, "bN1": 0, "bB1": 0, "bQ1": 0, "bK1": 0, "bB2": 0, "bN2": 0, "bR2": 0,
+    "wP1": 0, "wP2": 0, "wP3": 0, "wP4": 0, "wP5": 0, "wP6": 0, "wP7": 0, "wP8": 0,
+    "bP1": 0, "bP2": 0, "bP3": 0, "bP4": 0, "bP5": 0, "bP6": 0, "bP7": 0, "bP8": 0
+}
+
 def load_pieces():
     # List of piece types
     piece_types = ["R", "N", "B", "Q", "K", "P"]  # Rook, Knight, Bishop, Queen, King, Pawn
     
     # Number of each piece type
     piece_counts = {
-        "R": 2,  # Two rooks
-        "N": 2,  # Two knights
-        "B": 2,  # Two bishops
-        "Q": 1,  # One queen
+        "R": 8,  # Two rooks
+        "N": 8,  # Two knights
+        "B": 8,  # Two bishops
+        "Q": 8,  # One queen
         "K": 1,  # One king
         "P": 8   # Eight pawns
     }

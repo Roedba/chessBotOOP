@@ -1,4 +1,3 @@
-from definitions import *
 from functions import *
 import pygame
 
@@ -13,13 +12,13 @@ font = pygame.font.Font(None, 36)  # None uses default font, size 36
 # Create class instances
 piece = Piece()
 bishop = Bishop()
-"""rook = Rook()
 knight = Knight()
+rook = Rook()
 queen = Queen()
-king = King()"""
+king = King()
 
 piece.draw(piece_pos, sq, window, images) # Draw starting position
-legalMoves = getAllLegalMoves(piece_pos, moveRight, legalMoves) # get starting position legalMoves
+legalMoves = getAllLegalMoves(piece_pos, moveRight, legalMoves,enpassantPossibility) # get starting position legalMoves
 
 running = True
 while running:
@@ -34,19 +33,21 @@ while running:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
+                lastMove = move
                 move = moveRight + moveInput
                 moveInput = ""
 
-                piece.move(move,move[0],piece_pos,legalMoves)
-                window.blit(chessBoard, (0,0)) # Refresh board
-                piece.draw(piece_pos,sq,window,images)
+                if piece.move(move,move[0],piece_pos,legalMoves):
+                    window.blit(chessBoard, (0,0)) # Refresh board
+                    piece.draw(piece_pos,sq,window,images)
+                    
+                    if moveRight == "w": # Swap turns
+                        moveRight = "b"
+                    elif moveRight == "b":
+                        moveRight = "w"
 
-                if moveRight == "w":
-                    moveRight = "b"
-                elif moveRight == "b":
-                    moveRight = "w"
-                legalMoves = getAllLegalMoves(piece_pos,moveRight,legalMoves)
-
+                    legalMoves = getAllLegalMoves(piece_pos,moveRight,legalMoves,enpassantPossibility)
+                    print(legalMoves)
             elif event.key == pygame.K_BACKSPACE:
                 moveInput = moveInput[:-1]
 

@@ -1,37 +1,83 @@
 import pygame
+from definitions import *
 """
 todo:
-    implement the getLegalmoves function for all pieces
 
-    Objectives:
+    2.Objectives:
         implement check
         implement checkmate and stalemate
-    Special Moves:
-        implement promotion
-        implement en passant
-        implement castling, long and short(as king move?)
 
-    Draw rules:
-        3 move repetition
-        50 move rule
-        insufficient material to checkmate
+    1.Draw rules:
+        3 move repetition -- add dictionary that tracks all positions and has a counter and if theres the same position increases the counter by one. once it reaches three its a draw
+        50 move rule -- track when the last capture happened, if its 50 moves ago its a draw
+        insufficient material to checkmate -- add a list of piece configurations that are drawn and add a list of all pieces that are on the board, then check if the pieces on the board are in the list of drawn games
 
-    Extras:
-        option to take back moves
+    3.Extras:
+        option to take back moves -- create a dict that tracks the last position, then create a clickable button that changes the current piece_pos to the last piece_pos
+        option to restart game -- create a dict that holds the starting position, then add a clickable button that changes the current piece_pos to the starting piece_pos
+        option to flip the board -- add a variable called current_sq that holds square coordinates, create a sq that is reversed and then switch to that sq
+        add a start menu where you can choose your starting color
+        add time control to the start menu -- let a timer run down, when a player moves the other timer starts going down
+        add number identifier to piece images
+
+    FIX:
+        getLegalMoves iterates over all pieces and not only the piece it gets the legalMoves for
 """
 class Piece:
     def __init__(self):
         pass
-    
+
     def move(self,move,pieceColor,piecePos,legalMoves):
+        piece = move[0:3]
+        destination = move[3:5]
+        # Destination like a3 and piece like wR1
         if move in legalMoves:
-            piece = move[0:3]
-            destination = move[3:5]
-            # Destination like a3 and piece like wR1
+            if move == "w0-0":
+                piecePos["wK1"] = "g1"
+                piecePos["wR2"] = "f1"
+
+            elif move == "w0-0-0":
+                piecePos["wK1"] = "c1"
+                piecePos["wR1"] = "d1"
+            
+            elif move == "b0-0":
+                piecePos["bK1"] = "g8"
+                piecePos["bR2"] = "f8"
+
+            elif move == "b0-0-0":
+                piecePos["bK1"] = "c8"
+                piecePos["bR1"] = "d8"
+
+            elif move[1] == "P" and len(move) == 6:
+                del piecePos[move[0:3]]
+
+                piecePos[f"{move[0]}{move[5]}{pieceCount[move[0] + move[5]] + 1}"] = move[3:5] #add piece to piece pos after promotion
+                pieceCount[move[0:2]] += 1
+            
+            elif move[1] == "P" and len(move) > 6:
+                if move[5:8] == "e.p":
+                    column = "12345678"
+                    enpassantTargetSquare = destination[0] + column[column.index(destination[1])-1]
+                    enpassantTarget =  next((key for key, value in piece_pos.items() if value == enpassantTargetSquare), None)
+                    del piecePos[enpassantTarget]
+                    piecePos[piece] = destination
+            if move[1] == "P":
+                if move[4] in ("4", "5") and piecePos[piece][1] in ("2", "7"): # Python doesnt use "or" like a human, not my fault stupid. Waste of my time
+                    enpassantPossibility[0] = "possible"
+                    enpassantPossibility[1] = move
+                else:
+                    enpassantPossibility[0] = "notPossible"
+                    enpassantPossibility[1] = None
+            else:
+                enpassantPossibility[0] = "notPossible"
+                enpassantPossibility[1] = None
+
             piecePos[piece] = destination # If the piecePos dict is modified the passed dict is also modified(passing by reference)
+            pieceMoveCount[move[0:3]] += 1
             for loopPiece,position in piecePos.items(): # delete piece if taken
-                if position == destination and loopPiece != piece:
+                if position == destination and loopPiece != piece and loopPiece[0] != piece[0]:
                     del piecePos[loopPiece]
+                    pieceCount[move[0:2]] -= 1
                     return True
             return True
 
@@ -59,10 +105,10 @@ class Pawn(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self,moveRight,piecePos,legalMoves,enpassantPossibility):
         rowW = "abcdefgh"
         columnW = "12345678"
-
+        print(enpassantPossibility)
         for piece,position in piecePos.items():
             if piece[0:2] == f"{moveRight}P":
                 blocked = False
@@ -89,19 +135,57 @@ class Pawn(Piece):
 
                 # Check forward movement
                 if forwardSquare not in piecePos.values() and not self.isCheck(piecePos,move): # Not in check after move
-                    legalMoves.append(f"{piece}{forwardSquare}")
+                    if moveRight == "w" and columnW.index(forwardSquare[1]) == 7: #Promotion for white
+                        legalMoves.append(f"{piece}{forwardSquare}Q")
+                        legalMoves.append(f"{piece}{forwardSquare}N")
+                        legalMoves.append(f"{piece}{forwardSquare}B")
+                        legalMoves.append(f"{piece}{forwardSquare}R")
+                    elif moveRight == "b" and columnW.index(forwardSquare[1]) == 0: #Promotion for black
+                        legalMoves.append(f"{piece}{forwardSquare}Q")
+                        legalMoves.append(f"{piece}{forwardSquare}N")
+                        legalMoves.append(f"{piece}{forwardSquare}B")
+                        legalMoves.append(f"{piece}{forwardSquare}R")
+                    else:
+                        legalMoves.append(f"{piece}{forwardSquare}")
 
                 # Check diagonal captures
                 for diagSquare in [leftDiagonal, rightDiagonal]:
                     if diagSquare and diagSquare in piecePos.values():
                         targetPiece = [p for p, pos in piecePos.items() if pos == diagSquare][0]
                         if targetPiece[0] != moveRight and not self.isCheck(piecePos,move):  # Enemy piece and not in check after move
-                            legalMoves.append(f"{piece}{diagSquare}")
-                
+                            if moveRight == "w" and columnW.index(diagSquare[1]) == 7: #Promotion for white
+                                legalMoves.append(f"{piece}{diagSquare}Q")
+                                legalMoves.append(f"{piece}{diagSquare}N")
+                                legalMoves.append(f"{piece}{diagSquare}B")
+                                legalMoves.append(f"{piece}{diagSquare}R")
+                            elif moveRight == "b" and columnW.index(diagSquare[1]) == 0: #Promotion for black
+                                legalMoves.append(f"{piece}{diagSquare}Q")
+                                legalMoves.append(f"{piece}{diagSquare}N")
+                                legalMoves.append(f"{piece}{diagSquare}B")
+                                legalMoves.append(f"{piece}{diagSquare}R")
+                            else:
+                                legalMoves.append(f"{piece}{diagSquare}")
+
                 # Check double move
                 if doubleForwardSquare:
                     if doubleForwardSquare not in piecePos.values() and not self.isCheck(piecePos,move):
                         legalMoves.append(f"{piece}{doubleForwardSquare}")
+                if moveRight == "w" and position[1] == "5" and enpassantPossibility[0] == "possible":
+                    print("RECOGNIZED ENPASSANT POSSIBILITY")
+                    lastMove = enpassantPossibility[1]
+                    lastRow = rowW.index(lastMove[3])
+                    if currentCol + 1 == lastRow:
+                        legalMoves.append(f"{piece}{rightDiagonal}e.p")
+                    if currentCol - 1 == lastRow:
+                        legalMoves.append(f"{piece}{leftDiagonal}e.p")
+
+                if moveRight == "b" and position[1] == "4" and enpassantPossibility[0] == "possible":
+                    lastMove = enpassantPossibility[1]
+                    lastRow = rowW.index(lastMove[3])
+                    if currentCol + 1 == lastRow:
+                        legalMoves.append(f"{piece}{rightDiagonal}e.p")
+                    if currentCol - 1 == lastRow:
+                        legalMoves.append(f"{piece}{leftDiagonal}e.p")
 
 class Knight(Piece):
     def __init__(self):
@@ -110,23 +194,31 @@ class Knight(Piece):
     def getLegalMoves(self,moveRight,piecePos,legalMoves):
         column = "12345678"
         row = "abcdefgh"
-        directions = [
-                            ((1,1),(0,0)),   # Top right
-                            ((1,-1),(0,0)),   # Top left
-                            ((-1, 1),(0,-0)),      # Bottom right
-                            ((-1, -1),(0,0)),      # Bottom left
-                            ((0, 0),(1,-1)),       # Right up
-                            ((0, 0),(1,1)),       # Right down
-                            ((0, 0),(-1,-1))        # Left down
-                            ((0, 0),(-1,1))        # Left up
-                    ]
+        knightMoves = [
+        (2, 1), (2, -1), (-2, 1), (-2, -1),  # L-shapes vertically
+        (1, 2), (1, -2), (-1, 2), (-1, -2)   # L-shapes horizontally
+    ]
         for piece,position in piecePos.items():
-            if piece[0:2] == f"{moveRight}N":
+            if piece[0:2] == f"{moveRight}N": # Find knights of the correct color
                 currentCol = row.index(position[0])
                 currentRow = column.index(position[1])
 
-            for direction in directions:
-                    (columnOffSet, rowOffSet ),(sideRowOffSet,sideColumnOffSet)= direction
+                for colOffset,rowOffset in knightMoves:
+                    newCol = currentCol + colOffset
+                    newRow = currentRow + rowOffset
+                    if 0 <= newCol < 8 and 0 <= newRow < 8: # Ensure move is within bounds
+                        destination = f"{row[newCol]}{column[newRow]}"
+                        move = f"{piece}{destination}"
+
+                        if destination in piecePos.values(): # When a piece is in the way
+                            targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
+                            if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
+                                if not self.isCheck(piecePos, move):
+                                    legalMoves.append(move)
+                        else: # Else, if not in check add it as legalMove
+                            if not self.isCheck(piecePos, move): 
+                                legalMoves.append(move)
+
 class Bishop(Piece):
     def __init__(self):
         super().__init__()
@@ -136,10 +228,10 @@ class Bishop(Piece):
         column = "12345678"
         row = "abcdefgh"
         directions = [
-                    (1, 1),   # Topright
-                    (1, -1),  # Bottomright
-                    (-1, 1),  # Topleft
-                    (-1, -1)  # Bottomleft
+                    (1, 1),   # Top-right
+                    (1, -1),  # Bottom-right
+                    (-1, 1),  # Top-left
+                    (-1, -1)  # Bottom-left
                 ]
         for piece,position in piecePos.items():
             if piece[0:2] == f"{moveRight}B":
@@ -173,23 +265,155 @@ class Rook(Piece):
         super().__init__()
 
     def getLegalMoves(self,moveRight,piecePos,legalMoves):
-        pass
+        column = "12345678"
+        row = "abcdefgh"
+
+        rookMoves =[
+            (1,0),    # Up
+            (-1,0),   # Down
+            (0,1),    # Right
+            (0,-1),   # Left
+        ]
+        for piece,position in piecePos.items():
+            if piece[0:2] == f"{moveRight}R": # Find rooks of the correct color
+                currentCol = row.index(position[0])
+                currentRow = column.index(position[1])
+
+                for colOffset,rowOffset in rookMoves:
+                    step = 1
+                    
+                    while True:
+                        newCol = currentCol + step * colOffset
+                        newRow = currentRow + step * rowOffset
+                        if 0 <= newCol < 8 and 0 <= newRow < 8: # Ensure move is within bounds
+                            destination = f"{row[newCol]}{column[newRow]}"
+                            move = f"{piece}{destination}"
+
+                            if destination in piecePos.values(): # When a piece is in the way
+                                targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
+                                if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
+                                    if not self.isCheck(piecePos, move):
+                                        legalMoves.append(move)
+                                break
+                            else: # Else, if not in check add it as legalMove
+                                if not self.isCheck(piecePos, move): 
+                                    legalMoves.append(move)
+                        else:
+                            break
+                        step += 1
 
 class Queen(Piece):
     def __init__(self):
         super().__init__()
 
     def getLegalMoves(self,moveRight,piecePos,legalMoves):
-        pass
+        column = "12345678"
+        row = "abcdefgh"
+
+        queenMoves =[
+            (1,0),    # Up
+            (-1,0),   # Down
+            (0,1),    # Right
+            (0,-1),   # Left
+            (1, 1),   # Top-right
+            (1, -1),  # Bottom-right
+            (-1, 1),  # Top-left
+            (-1, -1)  # Bottom-left
+        ]
+        for piece,position in piecePos.items():
+            if piece[0:2] == f"{moveRight}Q": # Find queens of the correct color
+                currentCol = row.index(position[0])
+                currentRow = column.index(position[1])
+
+                for colOffset,rowOffset in queenMoves:
+                    step = 1
+                    
+                    while True:
+                        newCol = currentCol + step * colOffset
+                        newRow = currentRow + step * rowOffset
+                        if 0 <= newCol < 8 and 0 <= newRow < 8: # Ensure move is within bounds
+                            destination = f"{row[newCol]}{column[newRow]}"
+                            move = f"{piece}{destination}"
+
+                            if destination in piecePos.values(): # When a piece is in the way
+                                targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
+                                if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
+                                    if not self.isCheck(piecePos, move):
+                                        legalMoves.append(move)
+                                break
+                            else: # Else, if not in check add it as legalMove
+                                if not self.isCheck(piecePos, move): 
+                                    legalMoves.append(move)
+                        else:
+                            break
+                        step += 1
 
 class King(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def inCheck(self):
         pass
 
-def getAllLegalMoves(piecePos, moveRight, legalMoves):
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+        column = "12345678"
+        row = "abcdefgh"
+        """
+        Castling:
+            The king and rook have not moved yet.
+            The king is not in check.
+            The king is not in check after castling.
+            The king can move one square to the side (the side of the castling).
+            The rook can move to a square next to the king.
+            There is no piece on the square next to the king on the side of the castling.
+        """
+        kingMoves =[
+            (1,0),    # Up
+            (-1,0),   # Down
+            (0,1),    # Right
+            (0,-1),   # Left
+            (1, 1),   # Top-right
+            (1, -1),  # Bottom-right
+            (-1, 1),  # Top-left
+            (-1, -1)  # Bottom-left
+        ]
+        for piece,position in piecePos.items():
+            if piece[0:2] == f"{moveRight}K": # Find King of the correct color
+                currentCol = row.index(position[0])
+                currentRow = column.index(position[1])
+
+                for colOffset,rowOffset in kingMoves:
+                    newCol = currentCol + colOffset
+                    newRow = currentRow + rowOffset
+                    if 0 <= newCol < 8 and 0 <= newRow < 8: # Ensure move is within bounds
+                        destination = f"{row[newCol]}{column[newRow]}"
+                        move = f"{piece}{destination}"
+
+                        if destination in piecePos.values(): # When a piece is in the way
+                            targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
+                            if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
+                                if not self.isCheck(piecePos, move):
+                                    legalMoves.append(move)
+                        else: # Else, if not in check add it as legalMove
+                            if not self.isCheck(piecePos, move): 
+                                legalMoves.append(move)
+                if moveRight == "w":
+                    if "wR1c1" in legalMoves and pieceMoveCount["wR1"] == 0 and pieceMoveCount["wK1"] == 0 and not self.inCheck():
+                        if not self.isCheck(piecePos, "wK1c1") and "c1" not in piecePos.values() and "wK1c1" in legalMoves:
+                            legalMoves.append("w0-0-0")
+                    elif "wR2f1" in legalMoves and pieceMoveCount["wR2"] == 0 and pieceMoveCount["wK1"] == 0 and not self.inCheck():
+                        if not self.isCheck(piecePos, "wK1g1") and "f1" not in piecePos.values() and "wK1f1" in legalMoves:
+                            legalMoves.append("w0-0")
+
+                elif moveRight == "b":
+                    if "bR1c8" in legalMoves and pieceMoveCount["bR1"] == 0 and pieceMoveCount["bK1"] == 0 and not self.inCheck():
+                        if not self.isCheck(piecePos, "bK1c8") and "c8" not in piecePos.values() and "bK1c8" in legalMoves:
+                            legalMoves.append("b0-0-0")
+                    elif "bR2f8" in legalMoves and pieceMoveCount["bR2"] == 0 and pieceMoveCount["bK1"] == 0 and not self.inCheck():
+                        if not self.isCheck(piecePos, "bK1g8") and "f8" not in piecePos.values() and "bK1f8" in legalMoves:
+                            legalMoves.append("b0-0")
+
+def getAllLegalMoves(piecePos, moveRight, legalMoves,enpassantPossibility):
     legalMoves = []
     pieceTypes = []
     for piece, position in piecePos.items():
@@ -202,10 +426,9 @@ def getAllLegalMoves(piecePos, moveRight, legalMoves):
             pieceTypes.append(pieceType)
             
             if pieceType == "P":
-                Pawn().getLegalMoves(moveRight, piecePos, legalMoves)
+                Pawn().getLegalMoves(moveRight, piecePos, legalMoves,enpassantPossibility)
             elif pieceType == "B":
                 Bishop().getLegalMoves(moveRight, piecePos, legalMoves)
-            """
             elif pieceType == "R":
                 Rook().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "N":
@@ -215,5 +438,5 @@ def getAllLegalMoves(piecePos, moveRight, legalMoves):
             elif pieceType == "Q":
                 Queen().getLegalMoves(moveRight, piecePos, legalMoves)
             elif pieceType == "K":
-                King().getLegalMoves(moveRight, piecePos, legalMoves)"""
+                King().getLegalMoves(moveRight, piecePos, legalMoves)
     return legalMoves

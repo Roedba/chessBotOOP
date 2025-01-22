@@ -103,6 +103,75 @@ class Pawn(Piece):
                     if doubleForwardSquare not in piecePos.values() and not self.isCheck(piecePos,move):
                         legalMoves.append(f"{piece}{doubleForwardSquare}")
 
+class Knight(Piece):
+    def __init__(self):
+        super().__init__()
+
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+        pass
+
+class Bishop(Piece):
+    def __init__(self):
+        super().__init__()
+
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+
+        column = "12345678"
+        row = "abcdefgh"
+        directions = [
+                    (1, 1),   # Top-right
+                    (1, -1),  # Bottom-right
+                    (-1, 1),  # Top-left
+                    (-1, -1)  # Bottom-left
+                ]
+        for piece,position in piecePos.items():
+            if piece[0:2] == f"{moveRight}B":
+                currentCol = row.index(position[0])
+                currentRow = column.index(position[1])
+
+                for direction in directions:
+                    colOffset, rowOffset = direction
+                    step = 1
+                    while True:
+                        newCol = currentCol + step * colOffset
+                        newRow = currentRow + step * rowOffset
+                        if 0 <= newCol < 8 and 0 <= newRow < 8:
+                            destination = f"{row[newCol]}{column[newRow]}"
+                            move = f"{piece}{destination}"
+                            if destination in piecePos.values():
+                                targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
+                                if targetPiece[0] != moveRight:
+                                    if not self.isCheck(piecePos, move):
+                                        legalMoves.append(move)
+                                break
+                            else:
+                                if not self.isCheck(piecePos, move):
+                                    legalMoves.append(move)
+                        else:
+                            break
+                        step += 1
+
+class Rook(Piece):
+    def __init__(self):
+        super().__init__()
+
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+        pass
+
+class Queen(Piece):
+    def __init__(self):
+        super().__init__()
+
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+        pass
+
+class King(Piece):
+    def __init__(self):
+        super().__init__()
+
+    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+        pass
+
 def getAllLegalMoves(piecePos, moveRight, legalMoves):
     legalMoves = []
     pieceTypes = []

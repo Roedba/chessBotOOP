@@ -1,8 +1,10 @@
 import pygame
 
 moveRight = "w"
+oppositeMoveRight = "b"
 moveInput = ""
 legalMoves = []
+isCheckLegalMoves =[]
 clock = pygame.time.Clock()
 
 rowW = "abcdefgh"
@@ -12,6 +14,8 @@ columnB = "87654321"
 move = None
 enpassantPossibility = ["notPossible",None]
 
+piecePosDict = {}
+movesSinceLastCapture = [0]
 pieceCount = {
     "wQ":1,"wK":1,"wB":2,"wN":2,"wP":8,"wR":2,"bQ":1,"bK":1,"bB":2,"bN":2,"bP":8,"bR":2
 }
@@ -37,7 +41,35 @@ pieceMoveCount = {
     "wP1": 0, "wP2": 0, "wP3": 0, "wP4": 0, "wP5": 0, "wP6": 0, "wP7": 0, "wP8": 0,
     "bP1": 0, "bP2": 0, "bP3": 0, "bP4": 0, "bP5": 0, "bP6": 0, "bP7": 0, "bP8": 0
 }
+# List of drawn piece configurations
+drawnConfigurations = [
+    # King vs. King
+    {"wK1": "e1", "bK1": "e8"},
 
+    # King and Bishop vs. King
+    {"wK1": "e1", "wB1": "c3", "bK1": "e8"},
+
+    # King and Knight vs. King
+    {"wK1": "e1", "wN1": "f3", "bK1": "e8"},
+
+    # King and Bishop vs. King and Bishop (same color)
+    {"wK1": "e1", "wB1": "c3", "bK1": "e8", "bB1": "f6"},
+
+    # King and Knight vs. King and Knight
+    {"wK1": "e1", "wN1": "f3", "bK1": "e8", "bN1": "g6"},
+
+    # King and Bishop vs. King and Knight
+    {"wK1": "e1", "wB1": "c3", "bK1": "e8", "bN1": "g6"},
+
+    # King vs. King and Bishop
+    {"wK1": "e1", "bK1": "e8", "bB1": "f6"},
+
+    # King vs. King and Knight
+    {"wK1": "e1", "bK1": "e8", "bN1": "g6"},
+
+    # King and Bishop vs. King and Bishop (opposite color)
+    {"wK1": "e1", "wB1": "c3", "bK1": "e8", "bB1": "c6"},
+]
 def load_pieces():
     # List of piece types
     piece_types = ["R", "N", "B", "Q", "K", "P"]  # Rook, Knight, Bishop, Queen, King, Pawn

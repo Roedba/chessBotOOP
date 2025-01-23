@@ -37,14 +37,16 @@ while running:
                 move = moveRight + moveInput
                 moveInput = ""
 
-                if piece.move(move,move[0],piece_pos,legalMoves):
+                if piece.move(move,move[0],piece_pos,legalMoves,movesSinceLastCapture, drawnConfigurations):
                     window.blit(chessBoard, (0,0)) # Refresh board
                     piece.draw(piece_pos,sq,window,images)
                     
                     if moveRight == "w": # Swap turns
                         moveRight = "b"
+                        oppositeMoveRight = "w"
                     elif moveRight == "b":
                         moveRight = "w"
+                        oppositeMoveRight = "b"
 
                     legalMoves = getAllLegalMoves(piece_pos,moveRight,legalMoves,enpassantPossibility)
                     print(legalMoves)

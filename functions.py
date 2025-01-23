@@ -27,7 +27,7 @@ class Piece:
     def __init__(self):
         pass
 
-    def move(self,move,pieceColor,piecePos,legalMoves,movesSinceLastCapture,drawnConfigurations):
+    def move(self,move,pieceColor,piecePos,legalMoves,movesSinceLastCapture,drawnConfigurations, oppositeMoveRight, moveRight):
         piece = move[0:3]
         destination = move[3:5]
         # Destination like a3 and piece like wR1
@@ -90,6 +90,16 @@ class Piece:
                             pass
                     return True
                 
+            isCheckmate = self.isCheckmate(piecePos, moveRight, oppositeMoveRight)
+            if isCheckmate == "2":
+                #Implement Checkmate logic here
+                print("CHECKMATE")
+                pass
+            if isCheckmate == "1":
+                #Implement Stalemate logic here
+                print("STALEMATE")
+                pass
+
             piecePosKey = frozenset(piecePos.items()) # Track how often positions are repeated.
             if piecePosKey in piecePosDict:
                 piecePosDict[piecePosKey] += 1
@@ -120,14 +130,22 @@ class Piece:
         # Basic function structure, raise error if not implemented in subclass
         raise NotImplementedError("This method should be implemented by subclasses")
     
-    def isCheck(self,piecePos,move,moveRight):
+    def isCheck(self,piecePos,move,oppositeMoveRight):
         # Check if King is in Check after a move
-        newPiecePos = self.simulateMove(move,piecePos)
-        kingPos = newPiecePos[f"{moveRight}K1"]
-        isCheckLegalMoves = getAllIsCheckLegalMoves(piecePos, moveRight, legalMoves)
-        for move in isCheckLegalMoves:
-            if move[0:3] == kingPos:
-                return True
+        if move != None:
+            newPiecePos = self.simulateMove(move,piecePos)
+        else:
+            newPiecePos = piecePos.items()
+            if oppositeMoveRight == "w":
+                move[0] = "b"
+            else:
+                move[0] = "w"
+        kingPos = newPiecePos[f"{move[0]}K1"]
+        isCheckLegalMoves = getAllIsCheckLegalMoves(piecePos, oppositeMoveRight, legalMoves)
+        for isCheckMove in isCheckLegalMoves:
+            if isCheckMove[3:5] == kingPos: # and isCheckMove[0:3] in newPiecePos.items()
+                if isCheckMove[0:3] in newPiecePos:
+                    return True
         return False
     
     def simulateMove(self,move, piecePos):
@@ -145,11 +163,19 @@ class Piece:
 
         return newPiecePos
 
+    def isCheckmate(self, piecePos, oppositeMoveRight, moveRight):
+        isCheckmateLegalMoves = []
+        isCheckmateLegalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, isCheckmateLegalMoves, enpassantPossibility)
+        if len(isCheckmateLegalMoves) == 0:
+            if self.isCheck(piecePos, None, oppositeMoveRight):
+                return "1"
+            return "2"
+        return "0"
 class Pawn(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves,enpassantPossibility):
+    def getLegalMoves(self, moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility):
         rowW = "abcdefgh"
         columnW = "12345678"
         print(enpassantPossibility)
@@ -178,7 +204,7 @@ class Pawn(Piece):
                 move = f"{piece}{forwardSquare}"
 
                 # Check forward movement
-                if forwardSquare not in piecePos.values() and not self.isCheck(piecePos, move, moveRight): # Not in check after move
+                if forwardSquare not in piecePos.values() and not self.isCheck(piecePos, move, oppositeMoveRight): # Not in check after move
                     if moveRight == "w" and columnW.index(forwardSquare[1]) == 7: #Promotion for white
                         legalMoves.append(f"{piece}{forwardSquare}Q")
                         legalMoves.append(f"{piece}{forwardSquare}N")
@@ -196,7 +222,7 @@ class Pawn(Piece):
                 for diagSquare in [leftDiagonal, rightDiagonal]:
                     if diagSquare and diagSquare in piecePos.values():
                         targetPiece = [p for p, pos in piecePos.items() if pos == diagSquare][0]
-                        if targetPiece[0] != moveRight and not self.isCheck(piecePos, move, moveRight):  # Enemy piece and not in check after move
+                        if targetPiece[0] != moveRight and not self.isCheck(piecePos, piece+diagSquare, oppositeMoveRight):  # Enemy piece and not in check after move
                             if moveRight == "w" and columnW.index(diagSquare[1]) == 7: #Promotion for white
                                 legalMoves.append(f"{piece}{diagSquare}Q")
                                 legalMoves.append(f"{piece}{diagSquare}N")
@@ -212,7 +238,7 @@ class Pawn(Piece):
 
                 # Check double move
                 if doubleForwardSquare:
-                    if doubleForwardSquare not in piecePos.values() and not self.isCheck(piecePos, move, moveRight):
+                    if doubleForwardSquare not in piecePos.values() and not self.isCheck(piecePos, move, oppositeMoveRight):
                         legalMoves.append(f"{piece}{doubleForwardSquare}")
                 if moveRight == "w" and position[1] == "5" and enpassantPossibility[0] == "possible":
                     print("RECOGNIZED ENPASSANT POSSIBILITY")
@@ -299,7 +325,7 @@ class Knight(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self ,moveRight, oppositeMoveRight, piecePos, legalMoves):
         column = "12345678"
         row = "abcdefgh"
         knightMoves = [
@@ -321,10 +347,10 @@ class Knight(Piece):
                         if destination in piecePos.values(): # When a piece is in the way
                             targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
                             if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
-                                if not self.isCheck(piecePos, move, moveRight):
+                                if not self.isCheck(piecePos, move, oppositeMoveRight):
                                     legalMoves.append(move)
                         else: # Else, if not in check add it as legalMove
-                            if not self.isCheck(piecePos, move, moveRight): 
+                            if not self.isCheck(piecePos, move, oppositeMoveRight): 
                                 legalMoves.append(move)
 
     def isCheckGetLegalMoves(self,oppositeMoveRight,piecePos,isCheckLegalMoves):
@@ -357,7 +383,7 @@ class Bishop(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self ,moveRight, oppositeMoveRight, piecePos, legalMoves):
 
         column = "12345678"
         row = "abcdefgh"
@@ -384,11 +410,11 @@ class Bishop(Piece):
                             if destination in piecePos.values():
                                 targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
                                 if targetPiece[0] != moveRight:
-                                    if not self.isCheck(piecePos, move, moveRight):
+                                    if not self.isCheck(piecePos, move, oppositeMoveRight):
                                         legalMoves.append(move)
                                 break
                             else:
-                                if not self.isCheck(piecePos, move, moveRight):
+                                if not self.isCheck(piecePos, move, oppositeMoveRight):
                                     legalMoves.append(move)
                         else:
                             break
@@ -433,7 +459,7 @@ class Rook(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self ,moveRight, oppositeMoveRight, piecePos, legalMoves):
         column = "12345678"
         row = "abcdefgh"
 
@@ -461,11 +487,11 @@ class Rook(Piece):
                             if destination in piecePos.values(): # When a piece is in the way
                                 targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
                                 if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
-                                    if not self.isCheck(piecePos, move, moveRight):
+                                    if not self.isCheck(piecePos, move, oppositeMoveRight):
                                         legalMoves.append(move)
                                 break
                             else: # Else, if not in check add it as legalMove
-                                if not self.isCheck(piecePos, move, moveRight): 
+                                if not self.isCheck(piecePos, move, oppositeMoveRight): 
                                     legalMoves.append(move)
                         else:
                             break
@@ -511,7 +537,7 @@ class Queen(Piece):
     def __init__(self):
         super().__init__()
 
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self ,moveRight, oppositeMoveRight, piecePos, legalMoves):
         column = "12345678"
         row = "abcdefgh"
 
@@ -543,11 +569,11 @@ class Queen(Piece):
                             if destination in piecePos.values(): # When a piece is in the way
                                 targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
                                 if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
-                                    if not self.isCheck(piecePos, move, moveRight):
+                                    if not self.isCheck(piecePos, move, oppositeMoveRight):
                                         legalMoves.append(move)
                                 break
                             else: # Else, if not in check add it as legalMove
-                                if not self.isCheck(piecePos, move, moveRight): 
+                                if not self.isCheck(piecePos, move, oppositeMoveRight): 
                                     legalMoves.append(move)
                         else:
                             break
@@ -597,10 +623,7 @@ class King(Piece):
     def __init__(self):
         super().__init__()
 
-    def inCheck(self):
-        pass
-
-    def getLegalMoves(self,moveRight,piecePos,legalMoves):
+    def getLegalMoves(self ,moveRight, oppositeMoveRight, piecePos, legalMoves):
         column = "12345678"
         row = "abcdefgh"
         """
@@ -637,24 +660,24 @@ class King(Piece):
                         if destination in piecePos.values(): # When a piece is in the way
                             targetPiece = [p for p, pos in piecePos.items() if pos == destination][0]
                             if targetPiece[0] != moveRight: # When its a opposite colored piece add it as legalMove
-                                if not self.isCheck(piecePos, move, moveRight):
+                                if not self.isCheck(piecePos, move, oppositeMoveRight):
                                     legalMoves.append(move)
                         else: # Else, if not in check add it as legalMove
-                            if not self.isCheck(piecePos, move, moveRight): 
+                            if not self.isCheck(piecePos, move, oppositeMoveRight): 
                                 legalMoves.append(move)
                 if moveRight == "w":
-                    if "wR1c1" in legalMoves and pieceMoveCount["wR1"] == 0 and pieceMoveCount["wK1"] == 0 and not self.inCheck():
+                    if "wR1c1" in legalMoves and pieceMoveCount["wR1"] == 0 and pieceMoveCount["wK1"] == 0 and not self.isCheck(piecePos, None, oppositeMoveRight):
                         if not self.isCheck(piecePos, "wK1c1") and "c1" not in piecePos.values() and "wK1c1" in legalMoves:
                             legalMoves.append("w0-0-0")
-                    elif "wR2f1" in legalMoves and pieceMoveCount["wR2"] == 0 and pieceMoveCount["wK1"] == 0 and not self.inCheck():
+                    elif "wR2f1" in legalMoves and pieceMoveCount["wR2"] == 0 and pieceMoveCount["wK1"] == 0 and not self.isCheck(piecePos, None, oppositeMoveRight):
                         if not self.isCheck(piecePos, "wK1g1") and "f1" not in piecePos.values() and "wK1f1" in legalMoves:
                             legalMoves.append("w0-0")
 
                 elif moveRight == "b":
-                    if "bR1c8" in legalMoves and pieceMoveCount["bR1"] == 0 and pieceMoveCount["bK1"] == 0 and not self.inCheck():
+                    if "bR1c8" in legalMoves and pieceMoveCount["bR1"] == 0 and pieceMoveCount["bK1"] == 0 and not self.isCheck(piecePos, None, oppositeMoveRight):
                         if not self.isCheck(piecePos, "bK1c8") and "c8" not in piecePos.values() and "bK1c8" in legalMoves:
                             legalMoves.append("b0-0-0")
-                    elif "bR2f8" in legalMoves and pieceMoveCount["bR2"] == 0 and pieceMoveCount["bK1"] == 0 and not self.inCheck():
+                    elif "bR2f8" in legalMoves and pieceMoveCount["bR2"] == 0 and pieceMoveCount["bK1"] == 0 and not self.isCheck(piecePos, None, oppositeMoveRight):
                         if not self.isCheck(piecePos, "bK1g8") and "f8" not in piecePos.values() and "bK1f8" in legalMoves:
                             legalMoves.append("b0-0")
         
@@ -700,7 +723,7 @@ class King(Piece):
                             isCheckLegalMoves.append(move)
 
 
-def getAllLegalMoves(piecePos, moveRight, legalMoves,enpassantPossibility):
+def getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility):
     legalMoves = []
     pieceTypes = []
     for piece, position in piecePos.items():
@@ -713,19 +736,19 @@ def getAllLegalMoves(piecePos, moveRight, legalMoves,enpassantPossibility):
             pieceTypes.append(pieceType)
             
             if pieceType == "P":
-                Pawn().getLegalMoves(moveRight, piecePos, legalMoves,enpassantPossibility)
+                Pawn().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves,enpassantPossibility)
             elif pieceType == "B":
-                Bishop().getLegalMoves(moveRight, piecePos, legalMoves)
+                Bishop().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
             elif pieceType == "R":
-                Rook().getLegalMoves(moveRight, piecePos, legalMoves)
+                Rook().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
             elif pieceType == "N":
-                Knight().getLegalMoves(moveRight, piecePos, legalMoves)
+                Knight().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
             elif pieceType == "B":
-                Bishop().getLegalMoves(moveRight, piecePos, legalMoves)
+                Bishop().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
             elif pieceType == "Q":
-                Queen().getLegalMoves(moveRight, piecePos, legalMoves)
+                Queen().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
             elif pieceType == "K":
-                King().getLegalMoves(moveRight, piecePos, legalMoves)
+                King().getLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves)
     return legalMoves
 
 def getAllIsCheckLegalMoves(piecePos, moveRight, isCheckLegalMoves):

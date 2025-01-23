@@ -18,7 +18,7 @@ queen = Queen()
 king = King()
 
 piece.draw(piece_pos, sq, window, images) # Draw starting position
-legalMoves = getAllLegalMoves(piece_pos, moveRight, legalMoves,enpassantPossibility) # get starting position legalMoves
+legalMoves = legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, legalMoves, enpassantPossibility) # get starting position legalMoves
 
 running = True
 while running:
@@ -37,7 +37,7 @@ while running:
                 move = moveRight + moveInput
                 moveInput = ""
 
-                if piece.move(move,move[0],piece_pos,legalMoves,movesSinceLastCapture, drawnConfigurations):
+                if piece.move(move,move[0],piece_pos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
                     window.blit(chessBoard, (0,0)) # Refresh board
                     piece.draw(piece_pos,sq,window,images)
                     
@@ -48,8 +48,8 @@ while running:
                         moveRight = "w"
                         oppositeMoveRight = "b"
 
-                    legalMoves = getAllLegalMoves(piece_pos,moveRight,legalMoves,enpassantPossibility)
-                    print(legalMoves)
+                    legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, legalMoves, enpassantPossibility)
+                    print(f"Legal Moves: {legalMoves}")
             elif event.key == pygame.K_BACKSPACE:
                 moveInput = moveInput[:-1]
 

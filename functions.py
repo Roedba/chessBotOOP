@@ -90,7 +90,7 @@ class Piece:
                             pass
                     return True
                 
-            isCheckmate = self.isCheckmate(piecePos, moveRight, oppositeMoveRight)
+            """isCheckmate = self.isCheckmate(piecePos, moveRight, oppositeMoveRight)
             if isCheckmate == "2":
                 #Implement Checkmate logic here
                 print("CHECKMATE")
@@ -98,7 +98,7 @@ class Piece:
             if isCheckmate == "1":
                 #Implement Stalemate logic here
                 print("STALEMATE")
-                pass
+                pass"""
 
             piecePosKey = frozenset(piecePos.items()) # Track how often positions are repeated.
             if piecePosKey in piecePosDict:
@@ -135,11 +135,11 @@ class Piece:
         if move != None:
             newPiecePos = self.simulateMove(move,piecePos)
         else:
-            newPiecePos = piecePos.items()
+            newPiecePos = piecePos.copy()
             if oppositeMoveRight == "w":
-                move[0] = "b"
+                move = "b"
             else:
-                move[0] = "w"
+                move = "w"
         kingPos = newPiecePos[f"{move[0]}K1"]
         isCheckLegalMoves = getAllIsCheckLegalMoves(piecePos, oppositeMoveRight, legalMoves)
         for isCheckMove in isCheckLegalMoves:
@@ -171,6 +171,34 @@ class Piece:
                 return "1"
             return "2"
         return "0"
+    
+    def testAllPositions(self, piecePos, moveRight, oppositeMoveRight, depth = 0, max_depth = 5, positions_seen = None):
+
+        # Initialize the set of seen positions if not passed
+        if positions_seen is None:
+            positions_seen = set()
+
+        if depth >= max_depth:
+            # Convert the piecePos dictionary to a frozenset of tuples for hashing #hashthishashthathashitall
+            position_key = frozenset(piecePos.items())
+            positions_seen.add(position_key)
+            return
+
+        # Get all legal moves for the current player
+        legalMoves = []
+        legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility)
+
+        # Iterate through all legal moves
+        for move in legalMoves:
+            # Simulate the move
+            newPiecePos = self.simulateMove(move, piecePos)
+
+            # Recursively explore the next moves, change moveTight and oppositeMoveRight and increase the depth
+            self.testAllPositions(newPiecePos, oppositeMoveRight, moveRight, depth + 1, max_depth, positions_seen)
+
+        # Return the number of unique positions after x moves
+        return len(positions_seen)
+
 class Pawn(Piece):
     def __init__(self):
         super().__init__()
@@ -178,7 +206,6 @@ class Pawn(Piece):
     def getLegalMoves(self, moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility):
         rowW = "abcdefgh"
         columnW = "12345678"
-        print(enpassantPossibility)
         for piece,position in piecePos.items():
             if piece[0:2] == f"{moveRight}P":
                 blocked = False
@@ -778,3 +805,4 @@ def getAllIsCheckLegalMoves(piecePos, moveRight, isCheckLegalMoves):
             elif pieceType == "K":
                 King().isCheckGetLegalMoves(moveRight, piecePos, isCheckLegalMoves)
     return isCheckLegalMoves
+

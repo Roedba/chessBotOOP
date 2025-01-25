@@ -16,18 +16,18 @@ knight = Knight()
 rook = Rook()
 queen = Queen()
 king = King()
-print(piece.testAllPositions(piece_pos, moveRight, oppositeMoveRight))
-pygame.quit()
-"""piece.draw(piece_pos, sq, window, images) # Draw starting position
+
+piece.draw(piece_pos, sq, window, images) # Draw starting position
 legalMoves = legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, legalMoves, enpassantPossibility) # get starting position legalMoves
 
 running = True
 while running:
     
-        todo:
+    """ todo:
             use the pygame.display.update() method instead of pygame.display.flip(),
             to only update the neccesary parts of the board
             add error handling
+    """
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -66,4 +66,4 @@ while running:
     pygame.display.flip()
 
     clock.tick(60)  # Limit to 60 frames per second
-pygame.quit()"""
+pygame.quit()

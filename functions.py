@@ -1,5 +1,6 @@
 import pygame
 from definitions import *
+import random
 """
 todo:
 
@@ -21,7 +22,6 @@ todo:
         add number identifier to piece images
 
     FIX:
-        Legal Moves: ['bK1e8', 'bK1f6', 'bP5f5'] when N1 on f5 checking king on e7. bP5f5 does not put the king out of check
         getLegalMoves iterates over all pieces and not only the piece it gets the legalMoves for
 """
 class Piece:
@@ -59,7 +59,7 @@ class Piece:
                 if move[5:8] == "e.p":
                     column = "12345678"
                     enpassantTargetSquare = destination[0] + column[column.index(destination[1])-1]
-                    enpassantTarget =  next((key for key, value in piece_pos.items() if value == enpassantTargetSquare), None)
+                    enpassantTarget =  next((key for key, value in piecePos.items() if value == enpassantTargetSquare), None)
                     del piecePos[enpassantTarget]
                     piecePos[piece] = destination
             if move[1] == "P":
@@ -144,7 +144,7 @@ class Piece:
             else:
                 move = "w"
         kingPos = newPiecePos[f"{move[0]}K1"]
-        isCheckLegalMoves = getAllIsCheckLegalMoves(piecePos, oppositeMoveRight, legalMoves)
+        isCheckLegalMoves = getAllIsCheckLegalMoves(newPiecePos, oppositeMoveRight, legalMoves)
         for isCheckMove in isCheckLegalMoves:
             if isCheckMove[3:5] == kingPos: # and isCheckMove[0:3] in newPiecePos.items()
                 if isCheckMove[0:3] in newPiecePos:
@@ -166,18 +166,20 @@ class Piece:
                     del newPiecePos[p]
                 elif move[1] != "P":
                     del newPiecePos[p]  # Remove the captured piece
-
+                    continue
         return newPiecePos
 
-    """def isCheckmate(self, piecePos, oppositeMoveRight, moveRight):
-        isCheckmateLegalMoves = []
-        isCheckmateLegalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, isCheckmateLegalMoves, enpassantPossibility)
-        if len(isCheckmateLegalMoves) == 0:
+    def isCheckmate(self, legalMoves, piecePos, oppositeMoveRight):
+        if not legalMoves:
             if self.isCheck(piecePos, True, None, oppositeMoveRight):
-                return "1"
-            return "2"
-        return "0"""
+                return True
+        return False
     
+    def isStalemate(self, legalMoves, piecePos, oppositeMoveRight):
+        if not legalMoves:
+            if not self.isCheck(piecePos, True, None, oppositeMoveRight):
+                return True
+        return False
     def testAllPositions(self, piecePos, moveRight, oppositeMoveRight, depth = 0, max_depth = 5, positions_seen = None):
 
         # Initialize the set of seen positions if not passed
@@ -755,6 +757,13 @@ class King(Piece):
                         else: # Else, if not in check add it as legalMove
                             isCheckLegalMoves.append(move)
 
+# Create class instances
+piece = Piece()
+bishop = Bishop()
+knight = Knight()
+rook = Rook()
+queen = Queen()
+king = King()
 
 def getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility):
     legalMoves = []
@@ -811,4 +820,42 @@ def getAllIsCheckLegalMoves(piecePos, moveRight, isCheckLegalMoves):
             elif pieceType == "K":
                 King().isCheckGetLegalMoves(moveRight, piecePos, isCheckLegalMoves)
     return isCheckLegalMoves
+class ChessBot:
+    def chessBot(self, piecePos, moveRight, oppositeMoveRight, chessBotEnpassantPossibility, maxDepth, currentDepth=0):
 
+        chessBotLegalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, None, chessBotEnpassantPossibility)
+        if currentDepth >= maxDepth:
+            return None, self.evaluatePos(piecePos, chessBotLegalMoves)
+
+        bestMove = None
+        bestEvaluation = float('-inf') if moveRight == "w" else float('inf')  # Maximize for white, minimize for black
+
+        for move in chessBotLegalMoves:
+            isCapture = True
+            if move[1] == "P":  # If the piece is a pawn:
+                if move[3] == piecePos[move[0:3]][1]:  # Check if it's capturing
+                    isCapture = False
+
+            newPiecePos = piece.simulateMove(move, piecePos, isCapture)
+
+            _, evaluation = self.chessBot(newPiecePos, oppositeMoveRight, moveRight, chessBotEnpassantPossibility, maxDepth, currentDepth + 1)
+
+            if moveRight == "w":  # Maximizing player:
+                if evaluation > bestEvaluation:
+                    bestEvaluation = evaluation
+                    bestMove = move
+            else:  # Minimizing player
+                if evaluation < bestEvaluation:
+                    bestEvaluation = evaluation
+                    bestMove = move
+
+        return bestMove, bestEvaluation
+
+    def evaluatePos(self, piecePos, legalMoves):
+        eval = 0
+        for piece in piecePos:
+            if piece[0] == "w":
+                eval += pieceValues[piece[1]]
+        return eval
+    
+chessbot = ChessBot()

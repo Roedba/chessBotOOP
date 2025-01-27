@@ -9,16 +9,8 @@ window.blit(chessBoard, (0,0))
 
 font = pygame.font.Font(None, 36)  # None uses default font, size 36
 
-# Create class instances
-piece = Piece()
-bishop = Bishop()
-knight = Knight()
-rook = Rook()
-queen = Queen()
-king = King()
-
-piece.draw(piece_pos, sq, window, images) # Draw starting position
-legalMoves = legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, legalMoves, enpassantPossibility) # get starting position legalMoves
+piece.draw(piecePos, sq, window, images) # Draw starting position
+legalMoves = legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility) # get starting position legalMoves
 
 running = True
 while running:
@@ -37,10 +29,10 @@ while running:
                 lastMove = move
                 move = moveRight + moveInput
                 moveInput = ""
-
-                if piece.move(move,move[0],piece_pos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
+                print(chessbot.chessBot(piecePos, moveRight, oppositeMoveRight, enpassantPossibility, 2))
+                if piece.move(move,move[0],piecePos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
                     window.blit(chessBoard, (0,0)) # Refresh board
-                    piece.draw(piece_pos,sq,window,images)
+                    piece.draw(piecePos,sq,window,images)
                     
                     if moveRight == "w": # Swap turns
                         moveRight = "b"
@@ -49,8 +41,14 @@ while running:
                         moveRight = "w"
                         oppositeMoveRight = "b"
 
-                    legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piece_pos, legalMoves, enpassantPossibility)
-                    print(f"Legal Moves: {legalMoves}")
+                    legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility)
+                    if piece.isCheckmate(legalMoves, piecePos, oppositeMoveRight):
+                        print("Checkmate")
+                        running = False
+
+                    if piece.isStalemate(legalMoves, piecePos, oppositeMoveRight):
+                        print("Stalemate")
+                        running = False
             elif event.key == pygame.K_BACKSPACE:
                 moveInput = moveInput[:-1]
 
@@ -66,4 +64,3 @@ while running:
     pygame.display.flip()
 
     clock.tick(60)  # Limit to 60 frames per second
-pygame.quit()

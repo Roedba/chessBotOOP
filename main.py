@@ -29,7 +29,6 @@ while running:
                 lastMove = move
                 move = moveRight + moveInput
                 moveInput = ""
-                print(chessbot.chessBot(piecePos, moveRight, oppositeMoveRight, enpassantPossibility, 2))
                 if moveRight == "w":
                     if piece.move(move,move[0],piecePos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
                         window.blit(chessBoard, (0,0)) # Refresh board

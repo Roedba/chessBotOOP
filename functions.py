@@ -72,9 +72,9 @@ class Piece:
             else:
                 enpassantPossibility[0] = "notPossible"
                 enpassantPossibility[1] = None
-
-            piecePos[piece] = destination # If the piecePos dict is modified the passed dict is also modified(passing by reference)
-            pieceMoveCount[move[0:3]] += 1
+            if move != "w0-0" and move != "w0-0-0" and move != "b0-0" and move != "b0-0-0":
+                piecePos[piece] = destination # If the piecePos dict is modified the passed dict is also modified(passing by reference)
+                pieceMoveCount[move[0:3]] += 1
             for loopPiece,position in piecePos.items(): # delete piece if taken
                 if position == destination and loopPiece != piece and loopPiece[0] != piece[0]:
                     del piecePos[loopPiece]
@@ -880,9 +880,9 @@ class ChessBot:
 
         for move in legalMoves:
             if move == "w0-0" or move == "w0-0-0":
-                eval += 1
+                eval += 1.5
             elif move == "b0-0" or move == "b0-0-0":
-                eval -= 1
+                eval -= 1.5
             elif moveRight == "w":
                 eval += valueForLegalMoves[move[1]]
             elif moveRight == "b":

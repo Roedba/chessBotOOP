@@ -840,6 +840,12 @@ class ChessBot:
     def chessBot(self, piecePos, moveRight, oppositeMoveRight, chessBotEnpassantPossibility, maxDepth, currentDepth=0, alpha = float("-inf"), beta = float("inf"),calculations = 0):
 
         chessBotLegalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, None, chessBotEnpassantPossibility)
+        if piece.isCheckmate(chessBotLegalMoves, piecePos, oppositeMoveRight):
+            if moveRight == "w":
+                return(None, float("-inf"), 0)
+            if moveRight == "b":
+                return(None, float("inf"), 0)
+
         if currentDepth >= maxDepth:
             return None, self.evaluatePos(piecePos, chessBotLegalMoves, moveRight), calculations
 
@@ -853,7 +859,6 @@ class ChessBot:
                     isCapture = False
 
             newPiecePos = piece.simulateMove(move, piecePos, isCapture)
-
             _, evaluation, calculations = self.chessBot(newPiecePos, oppositeMoveRight, moveRight, chessBotEnpassantPossibility, maxDepth, currentDepth + 1, alpha, beta, calculations)
             calculations += 1
             if moveRight == "w":  # Maximizing player:

@@ -29,7 +29,7 @@ while running:
                 lastMove = move
                 move = moveRight + moveInput
                 moveInput = ""
-                if moveRight == "w":
+                if moveRight == "b":
                     if piece.move(move,move[0],piecePos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
                         window.blit(chessBoard, (0,0)) # Refresh board
                         piece.draw(piecePos,sq,window,images)
@@ -44,11 +44,11 @@ while running:
                         legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility)
                         if piece.isCheckmate(legalMoves, piecePos, oppositeMoveRight):
                             print("Checkmate")
-                            running = False
+                            #running = False
 
                         if piece.isStalemate(legalMoves, piecePos, oppositeMoveRight):
                             print("Stalemate")
-                            running = False
+                            #running = False
             elif event.key == pygame.K_BACKSPACE:
                 moveInput = moveInput[:-1]
 
@@ -60,7 +60,7 @@ while running:
             pygame.draw.rect(window, (0, 0, 0), (10, 550, 600, 30))
             window.blit(inputText, (10, 550))  # Display near the bottom-left corner
             #implement gui, modify it when key is pressed
-    if moveRight == "b":
+    if moveRight == "w":
         move = chessbot.chessBot(piecePos, moveRight, oppositeMoveRight, enpassantPossibility, 2)[0]
         if piece.move(move,move[0],piecePos,legalMoves,movesSinceLastCapture, drawnConfigurations, oppositeMoveRight, moveRight):
             window.blit(chessBoard, (0,0)) # Refresh board
@@ -76,11 +76,11 @@ while running:
             legalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, legalMoves, enpassantPossibility)
             if piece.isCheckmate(legalMoves, piecePos, oppositeMoveRight):
                 print("Checkmate")
-                running = False
+                #running = False
 
             if piece.isStalemate(legalMoves, piecePos, oppositeMoveRight):
                 print("Stalemate")
-                running = False
+                #running = False
     pygame.display.flip()
 
     clock.tick(60)  # Limit to 60 frames per second

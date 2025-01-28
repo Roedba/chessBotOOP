@@ -153,6 +153,22 @@ class Piece:
     
     def simulateMove(self,move, piecePos, isCapture):
         newPiecePos = piecePos.copy()  # Create a copy of piecePos
+        if move =="w0-0":
+            piecePos["wK1"] = "g1"
+            piecePos["wR2"] = "f1"
+            return newPiecePos
+        if move =="w0-0-0":
+            piecePos["wK1"] = "c1"
+            piecePos["wR1"] = "d1"
+            return newPiecePos
+        if move =="b0-0":
+            piecePos["bK1"] = "g8"
+            piecePos["bR2"] = "f8"
+            return newPiecePos
+        if move =="b0-0-0":
+            piecePos["bK1"] = "c8"
+            piecePos["bR1"] = "d8"
+            return newPiecePos
         piece = move[:3]  # Extract the piece (e.g., "wP1")
         destination = move[3:5]  # Extract the destination (e.g., "e4")
 
@@ -273,7 +289,7 @@ class Pawn(Piece):
 
                 # Check double move
                 if doubleForwardSquare:
-                    if doubleForwardSquare not in piecePos.values() and not self.isCheck(piecePos, False, piece+doubleForwardSquare, oppositeMoveRight):
+                    if doubleForwardSquare not in piecePos.values() and forwardSquare not in piecePos.values() and not self.isCheck(piecePos, False, piece+doubleForwardSquare, oppositeMoveRight):
                         legalMoves.append(f"{piece}{doubleForwardSquare}")
                 if moveRight == "w" and position[1] == "5" and enpassantPossibility[0] == "possible":
                     print("RECOGNIZED ENPASSANT POSSIBILITY")
@@ -354,7 +370,7 @@ class Pawn(Piece):
 
                 # Check double move
                 if doubleForwardSquare:
-                    if doubleForwardSquare not in piecePos.values():
+                    if doubleForwardSquare not in piecePos.values() and forwardSquare not in piecePos.values():
                         isCheckLegalMoves.append(f"{piece}{doubleForwardSquare}")
 class Knight(Piece):
     def __init__(self):
@@ -821,11 +837,11 @@ def getAllIsCheckLegalMoves(piecePos, moveRight, isCheckLegalMoves):
                 King().isCheckGetLegalMoves(moveRight, piecePos, isCheckLegalMoves)
     return isCheckLegalMoves
 class ChessBot:
-    def chessBot(self, piecePos, moveRight, oppositeMoveRight, chessBotEnpassantPossibility, maxDepth, currentDepth=0):
+    def chessBot(self, piecePos, moveRight, oppositeMoveRight, chessBotEnpassantPossibility, maxDepth, currentDepth=0, alpha = float("-inf"), beta = float("inf"),calculations = 0):
 
         chessBotLegalMoves = getAllLegalMoves(moveRight, oppositeMoveRight, piecePos, None, chessBotEnpassantPossibility)
         if currentDepth >= maxDepth:
-            return None, self.evaluatePos(piecePos, chessBotLegalMoves)
+            return None, self.evaluatePos(piecePos, chessBotLegalMoves, moveRight), calculations
 
         bestMove = None
         bestEvaluation = float('-inf') if moveRight == "w" else float('inf')  # Maximize for white, minimize for black
@@ -833,29 +849,76 @@ class ChessBot:
         for move in chessBotLegalMoves:
             isCapture = True
             if move[1] == "P":  # If the piece is a pawn:
-                if move[3] == piecePos[move[0:3]][1]:  # Check if it's capturing
+                if move[3] == piecePos[move[0:3]][0]:  # Check if it's capturing
                     isCapture = False
 
             newPiecePos = piece.simulateMove(move, piecePos, isCapture)
 
-            _, evaluation = self.chessBot(newPiecePos, oppositeMoveRight, moveRight, chessBotEnpassantPossibility, maxDepth, currentDepth + 1)
-
+            _, evaluation, calculations = self.chessBot(newPiecePos, oppositeMoveRight, moveRight, chessBotEnpassantPossibility, maxDepth, currentDepth + 1, alpha, beta, calculations)
+            calculations += 1
             if moveRight == "w":  # Maximizing player:
+                
                 if evaluation > bestEvaluation:
                     bestEvaluation = evaluation
                     bestMove = move
+                alpha = max(alpha, bestEvaluation)
+                if beta <= alpha:
+                    break
             else:  # Minimizing player
+                
                 if evaluation < bestEvaluation:
                     bestEvaluation = evaluation
                     bestMove = move
+                beta = min(beta, bestEvaluation)
+                if beta <= alpha:
+                    break
 
-        return bestMove, bestEvaluation
+        return bestMove, bestEvaluation, calculations
 
-    def evaluatePos(self, piecePos, legalMoves):
+    def evaluatePos(self, piecePos, legalMoves, moveRight):
         eval = 0
+
+        for move in legalMoves:
+            if move == "w0-0" or move == "w0-0-0":
+                eval += 1
+            elif move == "b0-0" or move == "b0-0-0":
+                eval -= 1
+            elif moveRight == "w":
+                eval += valueForLegalMoves[move[1]]
+            elif moveRight == "b":
+                eval -= valueForLegalMoves[move[1]]
+
         for piece in piecePos:
             if piece[0] == "w":
+                if piece[1] == "P":
+                    eval += pawn_square_values[piecePos[piece]]
+                if piece[1] == "N":
+                    eval += knight_square_values[piecePos[piece]]
+                if piece[1] == "B":
+                    eval += bishop_square_values[piecePos[piece]]
+                if piece[1] == "R":
+                    eval += rook_square_values[piecePos[piece]]
+                if piece[1] == "Q":
+                    eval += queen_square_values[piecePos[piece]]
+                if piece[1] == "K":
+                    eval += king_square_values[piecePos[piece]]
                 eval += pieceValues[piece[1]]
+            
+            if piece[0] == "b":
+                if piece[1] == "P":
+                    eval -= pawn_square_values[piecePos[piece]]
+                if piece[1] == "N":
+                    eval -= knight_square_values[piecePos[piece]]
+                if piece[1] == "B":
+                    eval -= bishop_square_values[piecePos[piece]]
+                if piece[1] == "R":
+                    eval -= rook_square_values[piecePos[piece]]
+                if piece[1] == "Q":
+                    eval -= queen_square_values[piecePos[piece]]
+                if piece[1] == "K":
+                    eval -= king_square_values[piecePos[piece]]
+                eval -= pieceValues[piece[1]]
+            
         return eval
     
 chessbot = ChessBot()
